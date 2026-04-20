@@ -2,8 +2,7 @@
 Tests para OllamaClient.
 
 Los tests que requieren un servidor Ollama corriendo se skipean automáticamente
-si no está disponible. Así los compañeros pueden correr `uv run pytest` sin
-tener Ollama levantado y el test suite no falla.
+si no está disponible. 
 """
 
 import pytest
