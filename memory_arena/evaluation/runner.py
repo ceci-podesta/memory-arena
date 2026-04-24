@@ -25,6 +25,10 @@ from memory_arena.evaluation.run_metadata import (
     finalize_run,
     start_run,
 )
+from memory_arena.experimental_config import (
+    DEFAULT_MAX_NEW_TOKENS,
+    DEFAULT_RETRIEVAL_TOP_K,
+)
 from memory_arena.llm.ollama_client import OllamaClient
 from memory_arena.memories.base import MemoriaBase, Turn
 
@@ -36,7 +40,8 @@ def run_strategy(
     strategy_name: str,
     benchmark_name: str,
     output_dir: Path = Path("results"),
-    top_k: int = 5,
+    top_k: int = DEFAULT_RETRIEVAL_TOP_K,
+    max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
 ) -> RunMetadata:
     """Corre una estrategia sobre una lista de samples y persiste resultados.
 
@@ -48,6 +53,7 @@ def run_strategy(
         benchmark_name: Ídem (ej "longmemeval_oracle").
         output_dir: Raíz de `results/` (default: ./results).
         top_k: Cuántos fragmentos pedirle a retrieve().
+        max_new_tokens: Tokens máximos a generar en la respuesta del LLM.
 
     Returns:
         La metadata de la corrida (con run_id, duración, etc.).
@@ -64,7 +70,7 @@ def run_strategy(
 
     with open(responses_path, "w", encoding="utf-8") as f:
         for sample in samples:
-            record = _process_sample(strategy, sample, llm, top_k)
+            record = _process_sample(strategy, sample, llm, top_k, max_new_tokens)
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             f.flush()  # persistir turno a turno por si se cae la corrida
 
@@ -78,6 +84,7 @@ def _process_sample(
     sample: LongMemEvalSample,
     llm: OllamaClient,
     top_k: int,
+    max_new_tokens: int,
 ) -> dict:
     strategy.reset()
 
@@ -95,7 +102,10 @@ def _process_sample(
     prompt = _build_prompt(sample.question, sample.question_date, context)
 
     t0 = time.perf_counter()
-    system_answer = llm.chat([{"role": "user", "content": prompt}])
+    system_answer = llm.chat(
+        [{"role": "user", "content": prompt}],
+        max_tokens=max_new_tokens,
+    )
     latency_s = time.perf_counter() - t0
 
     return {

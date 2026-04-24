@@ -211,3 +211,16 @@ __marimo__/
 results/runs/
 results/responses/
 results/judgments/
+
+# MovieLens: solo conservamos movies.csv (el resto pesa mucho y no lo usamos)
+data/movielens/*
+!data/movielens/ml-25m/
+data/movielens/ml-25m/*
+!data/movielens/ml-25m/movies.csv
+data/movielens/ml-25m.zip
+
+# entity2id.json es regenerable desde movies_merged.csv
+data/recsys_redial/entity2id.json
+
+# Ignorar todo results/ (regenerable con los scripts sobre los JSONL locales)
+results/
