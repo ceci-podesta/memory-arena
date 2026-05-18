@@ -1,0 +1,3 @@
+sub_dataset,n,kind,accuracy,mean_fluency,mean_recall,mean_precision,mean_f1,source_path
+detective_qa,71,boolean,0.338,,,,,/home/cecilia/projects/memory-arena/results/judgments/20260423_034535_no_memoria_mab_Long_Range_Understanding_detective_qa__mistral.jsonl
+infbench_sum_eng_shots2,100,structured,,1.0,0.0313,0.0765,0.0074,/home/cecilia/projects/memory-arena/results/judgments/20260423_034638_no_memoria_mab_Long_Range_Understanding_infbench_sum_eng_shots2__mistral.jsonl
