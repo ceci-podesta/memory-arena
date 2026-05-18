@@ -9,6 +9,7 @@ dependencies = [
     "editdistance>=0.8.1",
     "ollama>=0.6.1",
     "rouge-score>=0.1.2",
+    "sentence-transformers>=5.5.0",
 ]
 
 [dependency-groups]
