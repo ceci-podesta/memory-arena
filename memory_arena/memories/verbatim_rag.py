@@ -5,6 +5,11 @@ Estrategia 2: Verbatim + RAG.
 
 Guarda cada turno textualmente y recupera los fragmentos más relevantes
 por similitud semántica usando sentence-transformers + cosine similarity.
+
+Para turnos cortos (conversaciones de LongMemEval) se guarda un embedding
+por turno. Para documentos largos (MAB inject-once) se chunkea el contenido
+en fragmentos de CHUNK_WORDS palabras con overlap de CHUNK_OVERLAP palabras
+antes de embedear, para que retrieve pueda encontrar la parte relevante.
 """
 
 import numpy as np
@@ -12,12 +17,16 @@ from sentence_transformers import SentenceTransformer
 
 from memory_arena.memories.base import MemoriaBase, Turn
 
+CHUNK_WORDS = 100
+CHUNK_OVERLAP = 20
+
 
 class VerbatimRAG(MemoriaBase):
     """Memoria verbatim con recuperación por embeddings (dense retrieval).
 
-    Cada turno se guarda tal cual (verbatim). En retrieve, se embeddea la
-    query y se devuelven los top_k chunks más similares por cosine similarity.
+    Turnos cortos se guardan como un único chunk. Documentos largos se
+    dividen en chunks de CHUNK_WORDS palabras con overlap de CHUNK_OVERLAP
+    para evitar cortar ideas en los bordes.
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
@@ -26,14 +35,13 @@ class VerbatimRAG(MemoriaBase):
         self._embeddings: np.ndarray | None = None
 
     def store(self, turn: Turn) -> None:
-        text = turn.content
-        embedding = self._model.encode(text, convert_to_numpy=True)
-
-        self._texts.append(text)
-        if self._embeddings is None:
-            self._embeddings = embedding.reshape(1, -1)
-        else:
-            self._embeddings = np.vstack([self._embeddings, embedding])
+        for chunk in self._chunk(turn.content):
+            embedding = self._model.encode(chunk, convert_to_numpy=True)
+            self._texts.append(chunk)
+            if self._embeddings is None:
+                self._embeddings = embedding.reshape(1, -1)
+            else:
+                self._embeddings = np.vstack([self._embeddings, embedding])
 
     def retrieve(self, query: str, top_k: int = 5) -> list[str]:
         if not self._texts:
@@ -53,3 +61,22 @@ class VerbatimRAG(MemoriaBase):
     def reset(self) -> None:
         self._texts = []
         self._embeddings = None
+
+    def _chunk(self, text: str) -> list[str]:
+        """Divide text en chunks de CHUNK_WORDS palabras con overlap.
+
+        Si el texto es más corto que CHUNK_WORDS palabras, devuelve el
+        texto completo como un único chunk (caso típico de LongMemEval).
+        """
+        words = text.split()
+        if len(words) <= CHUNK_WORDS:
+            return [text]
+
+        chunks = []
+        step = CHUNK_WORDS - CHUNK_OVERLAP
+        for i in range(0, len(words), step):
+            chunk = " ".join(words[i : i + CHUNK_WORDS])
+            chunks.append(chunk)
+            if i + CHUNK_WORDS >= len(words):
+                break
+        return chunks

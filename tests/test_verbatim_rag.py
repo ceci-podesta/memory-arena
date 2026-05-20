@@ -109,3 +109,36 @@ def test_multiples_stores_acumulan(mem):
 
     result = mem.retrieve("algo", top_k=5)
     assert len(result) == 3
+
+
+def test_chunk_texto_corto_es_un_solo_chunk(mem):
+    """Un texto corto (menos de CHUNK_WORDS palabras) se guarda como 1 chunk."""
+    mem.store(Turn(role="user", content="texto corto de pocas palabras"))
+    result = mem.retrieve("texto", top_k=10)
+    assert len(result) == 1
+
+
+def test_chunk_texto_largo_genera_multiples_chunks(mem):
+    """Un documento largo se divide en múltiples chunks en el índice."""
+    # 300 palabras — supera CHUNK_WORDS=100, debe generar más de 1 chunk
+    texto_largo = " ".join([f"word{i}" for i in range(300)])
+    mem.store(Turn(role="document", content=texto_largo))
+    result = mem.retrieve("word", top_k=20)
+    assert len(result) > 1
+
+
+def test_chunk_retrieve_encuentra_fragmento_relevante(mem):
+    """retrieve encuentra el chunk relevante dentro de un documento largo.
+
+    El documento tiene información sobre comida al final. Sin chunking,
+    solo se embeddea el inicio y la info de comida se perdería.
+    Con chunking, el chunk con 'pizza' debería aparecer en los resultados.
+    """
+    inicio = " ".join(["word"] * 200)  # 200 palabras irrelevantes al inicio
+    final = "the user loves eating pizza and pasta for dinner"
+    texto_largo = inicio + " " + final
+
+    mem.store(Turn(role="document", content=texto_largo))
+    result = mem.retrieve("what food does the user like?", top_k=3)
+
+    assert any("pizza" in chunk.lower() for chunk in result)
