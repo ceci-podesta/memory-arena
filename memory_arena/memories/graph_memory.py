@@ -27,14 +27,28 @@ _EXTRACT_PROMPT = (
 class GraphMemory(MemoriaBase):
     """Memoria como grafo de conocimiento con extracción de triples via LLM."""
 
-    def __init__(self, llm: OllamaClient | None = None):
+    def __init__(
+        self,
+        llm: OllamaClient | None = None,
+        chunk_tokens: int = 600,
+        chunk_overlap_tokens: int = 0,
+    ):
         self.llm = llm or OllamaClient()
         self.graph: nx.DiGraph = nx.DiGraph()
+        self.chunk_tokens = chunk_tokens
+        self.chunk_overlap_tokens = chunk_overlap_tokens
 
     def store(self, turn: Turn) -> None:
-        triples = self._extract_triples(turn.content)
-        for subj, pred, obj in triples:
-            self.graph.add_edge(subj.lower(), obj.lower(), label=pred.lower())
+        text = turn.content
+        if _approx_tokens(text) <= self.chunk_tokens:
+            chunks = [text]
+        else:
+            chunks = self._chunk_text(text)
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+            for subj, pred, obj in self._extract_triples(chunk):
+                self.graph.add_edge(subj.lower(), obj.lower(), label=pred.lower())
 
     def retrieve(self, query: str, top_k: int = 5) -> list[str]:
         if self.graph.number_of_nodes() == 0:
@@ -75,3 +89,54 @@ class GraphMemory(MemoriaBase):
         # respuestas con texto libre, múltiples arrays o bloques markdown.
         pattern = r'\[\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\]'
         return re.findall(pattern, raw)
+
+    def _chunk_text(self, text: str) -> list[str]:
+        units = _split_into_units(text)
+        chunks: list[str] = []
+        buf: list[str] = []
+        buf_tokens = 0
+        for unit in units:
+            u_tokens = _approx_tokens(unit)
+            if u_tokens > self.chunk_tokens:
+                if buf:
+                    chunks.append(" ".join(buf))
+                    buf, buf_tokens = [], 0
+                chunks.extend(_split_oversized(unit, self.chunk_tokens))
+                continue
+            if buf_tokens + u_tokens > self.chunk_tokens and buf:
+                chunks.append(" ".join(buf))
+                buf, buf_tokens = [], 0
+            buf.append(unit)
+            buf_tokens += u_tokens
+        if buf:
+            chunks.append(" ".join(buf))
+        return chunks
+
+
+def _approx_tokens(s: str) -> int:
+    return max(len(s) // 4, len(s.split()))
+
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _split_into_units(text: str) -> list[str]:
+    units: list[str] = []
+    for paragraph in text.split("\n\n"):
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+        sentences = [s.strip() for s in _SENTENCE_SPLIT.split(paragraph) if s.strip()]
+        units.extend(sentences or [paragraph])
+    return units
+
+
+def _split_oversized(unit: str, chunk_tokens: int) -> list[str]:
+    words = unit.split()
+    if not words:
+        return []
+    words_per_chunk = max(1, int(chunk_tokens * 0.75))
+    return [
+        " ".join(words[i : i + words_per_chunk])
+        for i in range(0, len(words), words_per_chunk)
+    ]
