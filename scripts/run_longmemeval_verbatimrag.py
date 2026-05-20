@@ -12,7 +12,7 @@ from memory_arena.evaluation.runner import run_strategy
 from memory_arena.llm.ollama_client import OllamaClient
 from memory_arena.memories.verbatim_rag import VerbatimRAG
 
-MAX_SAMPLES = 5  # cambiar a None para corrida real completa
+MAX_SAMPLES = None # cambiar a None para corrida real completa
 
 
 def main() -> None:
