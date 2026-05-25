@@ -1,8 +1,0 @@
-question_type,accuracy,n
-knowledge-update,0.884615,78
-multi-session,0.413534,133
-single-session-assistant,0.839286,56
-single-session-preference,0.933333,30
-single-session-user,0.914286,70
-temporal-reasoning,0.406015,133
-GLOBAL,0.634000,500
