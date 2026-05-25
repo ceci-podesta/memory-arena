@@ -10,6 +10,7 @@ dependencies = [
     "networkx>=3.6.1",
     "ollama>=0.6.1",
     "rouge-score>=0.1.2",
+    "spacy>=3.8.14",
 ]
 
 [dependency-groups]
