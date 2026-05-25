@@ -1,0 +1,17 @@
+{
+  "run_id": "20260519_235425_a_mem_mab_Test_Time_Learning_icl_nlu_8296shot_balance",
+  "strategy": "a_mem",
+  "benchmark": "mab_Test_Time_Learning_icl_nlu_8296shot_balance",
+  "model": "llama3.2:3b",
+  "num_samples": 1,
+  "started_at": "2026-05-19T23:54:25.927135+00:00",
+  "ended_at": "2026-05-20T00:13:44.066113+00:00",
+  "duration_seconds": 1158.139,
+  "hardware": {
+    "os": "Linux 6.8.0-1058-gcp",
+    "python": "3.12.13",
+    "cpu_count": 4,
+    "gpu": "NVIDIA L4"
+  },
+  "git_commit": "aa9c336"
+}

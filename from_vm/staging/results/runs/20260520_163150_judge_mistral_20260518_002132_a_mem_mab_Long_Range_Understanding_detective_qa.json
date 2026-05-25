@@ -1,0 +1,17 @@
+{
+  "run_id": "20260520_163150_judge_mistral_20260518_002132_a_mem_mab_Long_Range_Understanding_detective_qa",
+  "strategy": "judge_mistral",
+  "benchmark": "20260518_002132_a_mem_mab_Long_Range_Understanding_detective_qa",
+  "model": "mistral:7b",
+  "num_samples": 71,
+  "started_at": "2026-05-20T16:31:50.470886+00:00",
+  "ended_at": "2026-05-20T16:32:14.058348+00:00",
+  "duration_seconds": 23.587,
+  "hardware": {
+    "os": "Linux 6.8.0-1058-gcp",
+    "python": "3.12.13",
+    "cpu_count": 4,
+    "gpu": "NVIDIA L4"
+  },
+  "git_commit": "aa9c336"
+}
